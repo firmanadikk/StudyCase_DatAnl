@@ -43,7 +43,6 @@ SELECT
         / COUNT(*) * 100, 2) AS churn_rate_pct 
 FROM status;
 
- ============================================================
  
 SELECT
     u.acquisition_channel,
@@ -59,7 +58,7 @@ JOIN status s USING (user_id)
 GROUP BY u.acquisition_channel
 ORDER BY churn_rate_pct DESC;
 
--- ============================================================
+
  
 SELECT
     DATE_TRUNC('month', u.signup_date::DATE) AS signup_cohort,
@@ -75,19 +74,6 @@ JOIN status s USING (user_id)
 GROUP BY signup_cohort
 ORDER BY signup_cohort;
 
-SELECT
-    DATE_TRUNC('month', u.signup_date::DATE) AS signup_cohort,
-    u.acquisition_channel,
-    COUNT(*) AS total_users,
-    COUNT(*) FILTER (WHERE s.is_churn = 1) AS churn_users,
-    ROUND( COUNT(*) FILTER (WHERE s.is_churn = 1)::NUMERIC
-        / COUNT(*) * 100, 2) AS churn_rate_pct
- 
-FROM users u
-JOIN status s USING (user_id)
- 
-GROUP BY signup_cohort, u.acquisition_channel
-ORDER BY signup_cohort, churn_rate_pct DESC;
 
 
 WITH last_activity_per_user AS (
@@ -96,27 +82,30 @@ WITH last_activity_per_user AS (
         MAX(event_date::DATE) AS last_activity_date
     FROM activity
     GROUP BY user_id
+),
+snapshot AS (
+  
+    SELECT MAX(event_date::DATE) AS ref_date FROM activity
 )
- 
+
 SELECT
     u.user_id,
     u.acquisition_channel,
     u.city,
     la.last_activity_date,
- 
-    -- Berapa hari sudah tidak login
-    CURRENT_DATE - la.last_activity_date AS days_inactive,
+    s_date.ref_date - la.last_activity_date AS days_inactive,
     s.is_churn
- 
+
 FROM last_activity_per_user la
+CROSS JOIN snapshot s_date
 JOIN users  u USING (user_id)
 JOIN status s USING (user_id)
- 
-WHERE
-    la.last_activity_date < CURRENT_DATE - INTERVAL '30 days'
-    AND s.is_churn = 0
-ORDER BY days_inactive DESC;
 
+WHERE
+    la.last_activity_date < s_date.ref_date - INTERVAL '30 days'
+    AND s.is_churn = 0
+
+ORDER BY days_inactive DESC;
 
 SELECT
     u.acquisition_channel,
