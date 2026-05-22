@@ -1,17 +1,3 @@
-
-"""
-Alur kerja:
-  1. Load & merge datasets
-  2. Feature Engineering
-  3. Preprocessing & Train-Test Split
-  4. Model Training (Random Forest)
-  5. Evaluasi (Accuracy, Precision, Recall, AUC)
-  6. Feature Importance & Interpretasi
-  7. Segmentasi Risiko (High / Medium / Low)
-"""
-
-# ── 0. IMPORT LIBRARY ────────────────────────────────────────────────────────
-
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -27,9 +13,6 @@ from sklearn.metrics         import (
     accuracy_score, precision_score, recall_score, f1_score,
     roc_auc_score, roc_curve, confusion_matrix, classification_report
 )
-
-
-# ── 1. LOAD DATA ──────────────────────────────────────────────────────────────
 
 print("=" * 60)
 print("STEP 1: LOAD DATA")
@@ -49,14 +32,10 @@ print(f"  Activity     : {activity.shape}")
 print(f"  Transactions : {transactions.shape}")
 print(f"  Status       : {status.shape}")
 
-
-# ── 2. FEATURE ENGINEERING ───────────────────────────────────────────────────
-
 print("\n" + "=" * 60)
 print("STEP 2: FEATURE ENGINEERING")
 print("=" * 60)
 
-# ---- Fitur dari Activity ----
 act_feat = activity.groupby("user_id").agg(
     total_sessions   = ("session_count", "sum"),    # total sesi login
     avg_sessions_day = ("session_count", "mean"),   # rata-rata sesi per hari aktif
@@ -70,12 +49,12 @@ feat_pivot = (
     .groupby("user_id").max().reset_index()
 )
 
-# ---- Fitur dari Transactions ----
+
 txn_feat = transactions.groupby("user_id").agg(
-    total_amount   = ("amount", "sum"),    # total nominal pinjaman
-    avg_amount     = ("amount", "mean"),   # rata-rata pinjaman
-    max_amount     = ("amount", "max"),    # pinjaman terbesar
-    loan_count_txn = ("amount", "count"),  # jumlah transaksi
+    total_amount   = ("amount", "sum"),    
+    avg_amount     = ("amount", "mean"),   
+    max_amount     = ("amount", "max"),    
+    loan_count_txn = ("amount", "count"),  
 ).reset_index()
 
 # ---- Fitur dari Users ----
@@ -99,14 +78,11 @@ df = (
     .merge(chan_dummies, on="user_id", how="left")
 )
 
-df = df.fillna(0)  # user tanpa data aktivitas/transaksi = 0
+df = df.fillna(0)  
 
 print(f"  Dataset final : {df.shape[0]} baris, {df.shape[1]} kolom")
 print(f"  Churn (1)     : {df['is_churn'].sum()} pengguna ({df['is_churn'].mean()*100:.1f}%)")
 print(f"  Aktif (0)     : {(df['is_churn']==0).sum()} pengguna ({(1-df['is_churn'].mean())*100:.1f}%)")
-
-
-# ── 3. TRAIN-TEST SPLIT ───────────────────────────────────────────────────────
 
 print("\n" + "=" * 60)
 print("STEP 3: TRAIN-TEST SPLIT (80% / 20%)")
@@ -127,9 +103,6 @@ print(f"  Fitur         : {len(FEATURE_COLS)}")
 print(f"  Train set     : {X_train.shape[0]} data")
 print(f"  Test set      : {X_test.shape[0]} data")
 
-
-# ── 4. TRAINING – RANDOM FOREST ───────────────────────────────────────────────
-
 print("\n" + "=" * 60)
 print("STEP 4: TRAINING – RANDOM FOREST")
 print("=" * 60)
@@ -146,9 +119,6 @@ rf.fit(X_train, y_train)
 print("  [✓] Random Forest berhasil dilatih")
 print(f"  Jumlah pohon  : {rf.n_estimators}")
 print(f"  Max depth     : {rf.max_depth}")
-
-
-# ── 5. EVALUASI MODEL ─────────────────────────────────────────────────────────
 
 print("\n" + "=" * 60)
 print("STEP 5: EVALUASI MODEL")
@@ -177,9 +147,6 @@ print(f"  CV AUC     : {cv_auc:.4f}
 print(f"\n  Classification Report:")
 print(classification_report(y_test, y_pred, target_names=["Aktif", "Churn"]))
 
-
-# ── 6. FEATURE IMPORTANCE ─────────────────────────────────────────────────────
-
 print("\n" + "=" * 60)
 print("STEP 6: FEATURE IMPORTANCE")
 print("=" * 60)
@@ -195,8 +162,6 @@ print("\n  Top 10 Driver Churn:")
 print(fi_df[["rank", "feature", "importance"]].head(10).to_string(index=False))
 
 
-# ── 7. SEGMENTASI RISIKO ──────────────────────────────────────────────────────
-
 print("\n" + "=" * 60)
 print("STEP 7: SEGMENTASI RISIKO PENGGUNA")
 print("=" * 60)
@@ -204,10 +169,7 @@ print("=" * 60)
 X_all = df[FEATURE_COLS].astype(float)
 df["churn_prob"] = rf.predict_proba(X_all)[:, 1]
 
-# Threshold segmentasi:
-# >= 0.60 → High-Risk  : intervensi segera
-# 0.30–0.59 → Medium-Risk : monitoring aktif
-# < 0.30  → Low-Risk   : pertahankan dengan loyalty program
+
 df["risk_segment"] = pd.cut(
     df["churn_prob"],
     bins=[0, 0.30, 0.60, 1.0],
@@ -232,8 +194,6 @@ seg_out.to_csv("part3_risk_segmentation.csv", index=False)
 print("\n  [✓] Segmentasi disimpan: part3_risk_segmentation.csv")
 
 
-# ── 8. VISUALISASI ────────────────────────────────────────────────────────────
-
 print("\n" + "=" * 60)
 print("STEP 8: MEMBUAT VISUALISASI")
 print("=" * 60)
@@ -249,7 +209,7 @@ fig.suptitle(
 gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.45, wspace=0.35)
 
 
-# ── Plot 1: Confusion Matrix ──
+# Plot 1: Confusion Matrix
 ax1 = fig.add_subplot(gs[0, 0])
 cm = confusion_matrix(y_test, y_pred)
 ax1.imshow(cm, cmap="Oranges")
@@ -273,7 +233,7 @@ for i in range(2):
                  fontsize=7)
 
 
-# ── Plot 2: ROC Curve ──
+# Plot 2: ROC Curve
 ax2 = fig.add_subplot(gs[0, 1])
 fpr, tpr, _ = roc_curve(y_test, y_prob)
 ax2.plot(fpr, tpr, color=COLORS["rf"], linewidth=2.5,
@@ -285,7 +245,7 @@ ax2.set_title("ROC Curve", fontweight="bold")
 ax2.legend(fontsize=9); ax2.grid(alpha=0.3)
 
 
-# ── Plot 3: Metrik Evaluasi ──
+# Plot 3: Metrik Evaluasi
 ax3 = fig.add_subplot(gs[0, 2])
 metric_names = ["Accuracy", "Precision", "Recall", "F1-Score", "AUC-ROC"]
 metric_vals  = [acc, prec, rec, f1, auc]
@@ -302,7 +262,7 @@ ax3.legend(fontsize=8); ax3.grid(axis="y", alpha=0.3)
 ax3.tick_params(axis="x", rotation=15)
 
 
-# ── Plot 4: Feature Importance (top 12) ──
+# Plot 4: Feature Importance (top 12)
 ax4 = fig.add_subplot(gs[1, :2])
 top12 = fi_df.head(12).sort_values("importance", ascending=True)
 thresh = top12["importance"].quantile(0.6)
@@ -318,7 +278,7 @@ ax4.set_title("Top 12 Feature Importance\n(Merah = driver churn terkuat)", fontw
 ax4.grid(axis="x", alpha=0.3)
 
 
-# ── Plot 5: Distribusi Probabilitas Churn ──
+# Plot 5: Distribusi Probabilitas Churn
 ax5 = fig.add_subplot(gs[1, 2])
 prob_churn  = y_prob[y_test.values == 1]
 prob_active = y_prob[y_test.values == 0]
@@ -338,8 +298,6 @@ plt.savefig("part3_rf_results.png",
             dpi=150, bbox_inches="tight", facecolor="white")
 print("  [✓] Visualisasi disimpan: part3_rf_results.png")
 
-
-# ── 9. RINGKASAN AKHIR ────────────────────────────────────────────────────────
 
 print("\n" + "=" * 60)
 print("RINGKASAN AKHIR – RANDOM FOREST CHURN MODEL")
