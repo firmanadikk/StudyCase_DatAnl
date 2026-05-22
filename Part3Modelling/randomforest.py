@@ -1,10 +1,5 @@
-"""
-============================================================
-PART 3 – CHURN PREDICTION MODELLING
-Studi Kasus Data Analyst – Astra Integrasi Digital (AID)
-Model: Random Forest Classifier
-============================================================
 
+"""
 Alur kerja:
   1. Load & merge datasets
   2. Feature Engineering
@@ -13,7 +8,6 @@ Alur kerja:
   5. Evaluasi (Accuracy, Precision, Recall, AUC)
   6. Feature Importance & Interpretasi
   7. Segmentasi Risiko (High / Medium / Low)
-============================================================
 """
 
 # ── 0. IMPORT LIBRARY ────────────────────────────────────────────────────────
@@ -141,10 +135,10 @@ print("STEP 4: TRAINING – RANDOM FOREST")
 print("=" * 60)
 
 rf = RandomForestClassifier(
-    n_estimators=200,        # 200 decision tree
-    max_depth=6,             # kedalaman max tiap pohon (cegah overfitting)
-    min_samples_leaf=5,      # min sampel di setiap leaf (cegah overfitting)
-    class_weight="balanced", # kompensasi imbalance: churn 30% vs aktif 70%
+    n_estimators=200,        
+    max_depth=6,             
+    min_samples_leaf=5,      
+    class_weight="balanced", 
     random_state=42
 )
 
@@ -173,12 +167,12 @@ auc  = roc_auc_score(y_test, y_prob)
 cv     = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 cv_auc = cross_val_score(rf, X_train, y_train, cv=cv, scoring="roc_auc").mean()
 
-print(f"\n  Accuracy   : {acc:.4f}   → seberapa sering prediksi benar secara keseluruhan")
-print(f"  Precision  : {prec:.4f}   → dari yang diprediksi churn, berapa % benar-benar churn")
-print(f"  Recall     : {rec:.4f}   → dari semua churn aktual, berapa % berhasil terdeteksi")
-print(f"  F1-Score   : {f1:.4f}   → harmonic mean precision & recall")
-print(f"  AUC-ROC    : {auc:.4f}   → kemampuan model memisahkan churn vs aktif")
-print(f"  CV AUC     : {cv_auc:.4f}   → rata-rata AUC dari 5-fold cross validation")
+print(f"\n  Accuracy   : {acc:.4f}   
+print(f"  Precision  : {prec:.4f}   
+print(f"  Recall     : {rec:.4f}   
+print(f"  F1-Score   : {f1:.4f}   
+print(f"  AUC-ROC    : {auc:.4f}   
+print(f"  CV AUC     : {cv_auc:.4f}   
 
 print(f"\n  Classification Report:")
 print(classification_report(y_test, y_pred, target_names=["Aktif", "Churn"]))
